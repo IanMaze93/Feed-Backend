@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry
+
+      - name: Install dependencies
+        run: |
+          poetry install --no-interaction --no-ansi
+
+      - name: Validate Poetry configuration
+        run: |
+          poetry check --lock
+
+      - name: Linting check
+        run: |
+          poetry run ruff check .
+
+      - name: Format check
+        run: |
+          poetry run ruff format --check .
