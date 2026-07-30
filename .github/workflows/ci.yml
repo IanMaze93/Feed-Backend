@@ -39,3 +39,7 @@ jobs:
       - name: Format check
         run: |
           poetry run ruff format --check .
+
+      - name: Run tests
+        run: |
+          poetry run pytest -q
