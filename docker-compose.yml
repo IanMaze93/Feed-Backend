@@ -1,0 +1,23 @@
+services:
+  feed-api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    container_name: feed-api
+    restart: unless-stopped
+    ports:
+      - "4000:4001"
+    env_file:
+      - .env
+    environment:
+      MONGO_URI: ${MONGO_URI}
+
+  mongo:
+    image: mongo:latest
+    container_name: feed-mongo-db
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
