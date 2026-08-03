@@ -141,6 +141,33 @@ standard = ["email-validator (>=2.0.0)", "fastapi-cli[standard] (>=0.0.8)", "fas
 standard-no-fastapi-cloud-cli = ["email-validator (>=2.0.0)", "fastapi-cli[standard-no-fastapi-cloud-cli] (>=0.0.8)", "httpx (>=0.23.0,<1.0.0)", "jinja2 (>=3.1.5)", "pydantic-extra-types (>=2.0.0)", "pydantic-settings (>=2.0.0)", "python-multipart (>=0.0.18)", "uvicorn[standard] (>=0.12.0)"]
 
 [[package]]
+name = "feedparser"
+version = "6.0.14"
+description = "Universal feed parser, handles RSS 0.9x, RSS 1.0, RSS 2.0, CDF, Atom 0.3, and Atom 1.0 feeds"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "feedparser-6.0.14-py3-none-any.whl", hash = "sha256:e35e3f760151b0c3b22cac9684155cae186a233e16c49bcbc6c49e91e3131137"},
+    {file = "feedparser-6.0.14.tar.gz", hash = "sha256:088679b0c4b543ee211a820dd544698c76a402122eae7473c04a43425f283d06"},
+]
+
+[package.dependencies]
+feedparser-sgmllib = ">=2,<3"
+
+[[package]]
+name = "feedparser-sgmllib"
+version = "2.0.1"
+description = "sgmllib from Python 2.7. For feedparser use only."
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "feedparser_sgmllib-2.0.1-py3-none-any.whl", hash = "sha256:113d6e0d7e1196200a13013044999aef75772d515f25a3e77c5e2047eb82c212"},
+    {file = "feedparser_sgmllib-2.0.1.tar.gz", hash = "sha256:32d46a92fe429d033c6793a45d4af28a150ff3e74f5bfdb598e26811ce4c2664"},
+]
+
+[[package]]
 name = "filelock"
 version = "3.32.0"
 description = "A platform independent file lock."
@@ -1163,4 +1190,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "b38049131510850319378cfe1ce5be4580436c42c4a72019f0a55fb705c62516"
+content-hash = "9b1f94caed55d85abb61967f6ce7cd86e2a7070c1dcd4c0dd7f1467a5935e954"
