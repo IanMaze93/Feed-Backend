@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from src.builders.topics import build_topic
 from src.builders.users import build_user
 from src.database.topics import add_pointer_to_topic, get_all_topics_by_user_id
-from src.handlers.common import createEntity, getEntityById
+from src.handlers.common import createEntity, deleteEntityById, getEntityById
 from src.handlers.health import health_handler
 from src.handlers.root import root_handler
 from src.models.api.topic import CreateTopicPayload, CreateTopicRequest
@@ -52,6 +52,11 @@ def create_topic(user_id: str, payload: CreateTopicRequest):
         ),
         collection=Collections.TOPICS,
     )
+
+
+@app.post("/users/{user_id}/topics/{topic_id}/delete")
+def delete_topic(topic_id: str):
+    return deleteEntityById(entity_id=topic_id, collection=Collections.TOPICS)
 
 
 @app.post("/users/{user_id}/topics/{topic_id}/pointers")
