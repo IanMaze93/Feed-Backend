@@ -71,8 +71,6 @@ def get_topics(user_id: str):
 
 @app.get("/users/{user_id}/topics/{topic_id}/stories")
 def get_stories(user_id: str, topic_id: str):
-    # Implement the logic to get stories for the given topic_id
-    print(f"Fetching stories for user_id: {user_id}, topic_id: {topic_id}")
     return rss_read(
         "https://news.google.com/rss/search?q=marvel-news", feed_type=RSS_FEEDS.GOOGLE
     )
