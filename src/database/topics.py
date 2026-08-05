@@ -6,6 +6,7 @@ from bson.errors import InvalidId
 from src.database.find import find_many, find_one
 from src.database.update import update_one
 from src.models.database.common import Collections
+from src.models.database.topic import Topic
 from src.tools.logging import getLogger
 
 logger = getLogger()
@@ -72,10 +73,6 @@ def get_all_topics_by_user_id(user_id: str) -> dict:
 
         data = list(cursor)
 
-        for topic in data:
-            topic["_id"] = str(topic["_id"])
-            topic["userId"] = str(topic["userId"])
-
         return {
             "status": "success",
             "entity": data,
@@ -87,3 +84,28 @@ def get_all_topics_by_user_id(user_id: str) -> dict:
     except Exception as error:
         logger.exception("Error retrieving topics")
         raise ValueError(f"Error retrieving topics: {error}") from error
+
+
+def get_topic_by_id(topic_id: str) -> Topic:
+    """
+    Get a topic by its ID.
+    """
+    try:
+        topic_object_id = ObjectId(topic_id)
+
+        topic = find_one(
+            Collections.TOPICS,
+            {"_id": topic_object_id},
+        )
+
+        if not topic:
+            return None
+
+        return topic
+
+    except InvalidId as error:
+        raise ValueError("Invalid topic ID.") from error
+
+    except Exception as error:
+        logger.exception("Error retrieving topic")
+        raise ValueError(f"Error retrieving topic: {error}") from error

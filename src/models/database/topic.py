@@ -21,3 +21,26 @@ class Topic(BaseModel):
     pointers: list[pointer] = []
     createdAt: datetime
     updatedAt: datetime
+
+
+class Outbound_Topic(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+    )
+
+    id: str = Field(default_factory=str, alias="_id")
+    userId: str
+    topic: str
+    pointers: list[pointer] = []
+    createdAt: datetime
+    updatedAt: datetime
+
+
+class Outbound_Topics(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+    )
+
+    topics: list[Outbound_Topic] = []
