@@ -13,6 +13,7 @@ def build_topic(payload: CreateTopicPayload) -> Topic:
         id=ObjectId(),
         userId=ObjectId(payload.userId),
         topic=payload.topic,
+        pointers=payload.pointers if hasattr(payload, "pointers") else [],
         createdAt=now,
         updatedAt=now,
     )
