@@ -6,7 +6,7 @@ from bson.errors import InvalidId
 from src.database.find import find_many, find_one
 from src.database.update import update_one
 from src.models.database.common import Collections
-from src.models.database.topic import Topic
+from src.models.database.topic import Outbound_Topics, Topic
 from src.tools.logging import getLogger
 
 logger = getLogger()
@@ -59,7 +59,7 @@ def add_pointer_to_topic(
         raise ValueError(f"Error adding pointer to topic: {error}") from error
 
 
-def get_all_topics_by_user_id(user_id: str) -> dict:
+def get_all_topics_by_user_id(user_id: str) -> Outbound_Topics:
     """
     Get all topics belonging to a user.
     """
@@ -73,10 +73,7 @@ def get_all_topics_by_user_id(user_id: str) -> dict:
 
         data = list(cursor)
 
-        return {
-            "status": "success",
-            "entity": data,
-        }
+        return Outbound_Topics(topics=data)
 
     except InvalidId as error:
         raise ValueError("Invalid user ID.") from error

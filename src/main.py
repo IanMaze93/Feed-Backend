@@ -13,7 +13,6 @@ from src.handlers.stories import get_stories
 from src.models.api.topic import CreateTopicPayload, CreateTopicRequest
 from src.models.api.user import CreateUserPayload
 from src.models.database.common import Collections
-from src.models.database.topic import Outbound_Topics
 
 app = FastAPI(
     title="Feed Backend API",
@@ -69,7 +68,7 @@ def add_pointer(user_id: str, topic_id: str, payload: dict):
 
 @app.get("/users/{user_id}/topics")
 def get_topics(user_id: str):
-    return Outbound_Topics(topics=get_all_topics_by_user_id(user_id))
+    return get_all_topics_by_user_id(user_id)
 
 
 @app.get("/users/{user_id}/topics/{topic_id}/stories")
