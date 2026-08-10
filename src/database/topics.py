@@ -6,7 +6,7 @@ from bson.errors import InvalidId
 from src.database.find import find_many, find_one
 from src.database.update import update_one
 from src.models.database.common import Collections
-from src.models.database.topic import Outbound_Topics, Topic
+from src.models.database.topic import Outbound_Topic, Outbound_Topics, Topic
 from src.tools.logging import getLogger
 
 logger = getLogger()
@@ -31,8 +31,8 @@ def add_pointer_to_topic(
         pointers = topic.get("pointers", []) if topic else []
 
         payload = {
-            "userId": str(user_object_id),
-            "topic": topic["topic"] or "marvel news",
+            "userId": user_object_id,
+            "topic": topic["topic"],
             "pointers": pointers + [pointer],
             "updatedAt": datetime.now(),
         }
@@ -49,7 +49,7 @@ def add_pointer_to_topic(
                 f"Error updating topic with new pointer: {error}"
             ) from error
 
-        return payload
+        return Outbound_Topic.model_validate(find_one(Collections.TOPICS, query))
 
     except InvalidId as error:
         raise ValueError("Invalid user ID or topic ID.") from error
