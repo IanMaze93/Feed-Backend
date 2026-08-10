@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from src.builders.topics import build_topic
 from src.builders.users import build_user
+from src.database.stories import get_all_stories_by_user
 from src.database.topics import (
     add_pointer_to_topic,
     get_all_topics_by_user_id,
@@ -74,3 +75,8 @@ def get_topics(user_id: str):
 @app.get("/users/{user_id}/topics/{topic_id}/stories")
 def get_stories_by_topic(user_id: str, topic_id: str):
     return get_stories(user_id=user_id, topic_id=topic_id)
+
+
+@app.get("/users/{user_id}/stories")
+def get_stories_by_user(user_id: str):
+    return get_all_stories_by_user(user_id)
