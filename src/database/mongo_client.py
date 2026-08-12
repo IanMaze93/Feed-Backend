@@ -32,6 +32,6 @@ def connectToDatabase() -> Database:
     global database
 
     if database is None:
-        database = getClient()[DataBaseName.EIGHT_BIT.value]
+        database = getClient()[DataBaseName.FEED_DB.value]
 
     return database
