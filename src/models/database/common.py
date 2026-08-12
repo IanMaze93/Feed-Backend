@@ -4,7 +4,8 @@ from enum import Enum
 class Collections(Enum):
     USERS = "Users"
     TOPICS = "Topics"
+    STORIES = "Stories"
 
 
 class DataBaseName(Enum):
-    EIGHT_BIT = "feed_db"
+    FEED_DB = "feed_db"

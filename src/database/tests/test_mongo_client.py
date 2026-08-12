@@ -40,5 +40,5 @@ def test_connect_to_database_returns_database(mock_getenv, mock_mongo_client):
 
     result = mongo_client.connectToDatabase()
 
-    mock_client.__getitem__.assert_called_once_with(DataBaseName.EIGHT_BIT.value)
+    mock_client.__getitem__.assert_called_once_with(DataBaseName.FEED_DB.value)
     assert result is mock_database
