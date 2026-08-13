@@ -10,7 +10,7 @@ def getScheduler() -> BackgroundScheduler:
     scheduler.add_job(
         refresh_stories,
         trigger="interval",
-        minutes=1,
+        minutes=10,
         max_instances=1,
         coalesce=True,
     )
