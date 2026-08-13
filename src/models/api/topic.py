@@ -1,14 +1,22 @@
-from pydantic import BaseModel, Field
+from bson import ObjectId
+from pydantic import BaseModel, ConfigDict, Field
 
-from src.models.database.topic import Pointer
 
-
-class CreateTopicPayload(BaseModel):
-    userId: str
-    topic: str
-    pointers: list[Pointer] = Field(default_factory=list)
+class PointerPayload(BaseModel):
+    url: str
+    feed_type: str
 
 
 class CreateTopicRequest(BaseModel):
     topic: str
-    pointers: list[Pointer] = Field(default_factory=list)
+    pointers: list[PointerPayload] = Field(default_factory=list)
+
+
+class CreateTopicPayload(BaseModel):
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
+
+    userId: str
+    topic: str
+    pointers: list[ObjectId] = Field(default_factory=list)

@@ -1,12 +1,9 @@
 from datetime import datetime
 
 from bson import ObjectId
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
-
-class Pointer(BaseModel):
-    link: str
-    feed_type: str
+from src.models.database.common import ObjectIdString
 
 
 class Topic(BaseModel):
@@ -18,30 +15,15 @@ class Topic(BaseModel):
     id: ObjectId = Field(default_factory=ObjectId, alias="_id")
     userId: ObjectId
     topic: str
-    pointers: list[Pointer] = Field(default_factory=list)
+    pointers: list[ObjectId] = Field(default_factory=list)
     createdAt: datetime
     updatedAt: datetime
 
 
-class Outbound_Topic(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
-
-    id: str = Field(alias="_id")
-    userId: str
-    topic: str
-    pointers: list[Pointer] = Field(default_factory=list)
-    createdAt: datetime
-    updatedAt: datetime
-
-    @field_validator("id", "userId", mode="before")
-    @classmethod
-    def object_id_to_string(cls, value):
-        if isinstance(value, ObjectId):
-            return str(value)
-
-        return value
+class Outbound_Topic(Topic):
+    id: ObjectIdString = Field(alias="_id")
+    userId: ObjectIdString
+    pointers: list[ObjectIdString] = Field(default_factory=list)
 
 
 class Outbound_Topics(BaseModel):

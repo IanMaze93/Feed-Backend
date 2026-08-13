@@ -7,6 +7,12 @@ scheduler = BackgroundScheduler()
 
 def getScheduler() -> BackgroundScheduler:
     ## Register jobs
-    scheduler.add_job(refresh_stories, trigger="cron", day=1)
+    scheduler.add_job(
+        refresh_stories,
+        trigger="interval",
+        minutes=1,
+        max_instances=1,
+        coalesce=True,
+    )
 
     return scheduler

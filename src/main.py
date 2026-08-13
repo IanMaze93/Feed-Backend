@@ -1,24 +1,48 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
-from src.builders.topics import build_topic
 from src.builders.users import build_user
+from src.cron.scheduler import getScheduler
+from src.database.mongo_client import connectToDatabase
 from src.database.stories import get_all_stories_by_user
 from src.database.topics import (
     add_pointer_to_topic,
     get_all_topics_by_user_id,
 )
-from src.handlers.common import createEntity, deleteEntityById, getEntityById
+from src.handlers.common import createEntity, deleteEntityById
 from src.handlers.health import health_handler
 from src.handlers.root import root_handler
 from src.handlers.stories import get_stories
-from src.models.api.topic import CreateTopicPayload, CreateTopicRequest
+from src.handlers.topics import create_topic_handler
+from src.handlers.users import get_user_by_id
+from src.models.api.topic import CreateTopicRequest, PointerPayload
 from src.models.api.user import CreateUserPayload
 from src.models.database.common import Collections
+from src.models.database.story import Outbound_Stories, Outbound_Story
+from src.models.database.topic import Outbound_Topic
+from src.setup.mongo.index import create_indexes
+
+scheduler = getScheduler()
+
+db = connectToDatabase()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_indexes(db)
+    scheduler.start()
+
+    yield
+
+    scheduler.shutdown()
+
 
 app = FastAPI(
     title="Feed Backend API",
     version="0.1.0",
     description="Core API gateway for Feed services.",
+    lifespan=lifespan,
 )
 
 
@@ -42,19 +66,12 @@ def create_user(payload: CreateUserPayload):
 
 @app.get("/users/{user_id}")
 def get_user(user_id: str):
-    return getEntityById(user_id, collection=Collections.USERS)
+    return get_user_by_id(user_id)
 
 
 @app.post("/users/{user_id}/topics")
-def create_topic(user_id: str, payload: CreateTopicRequest):
-    return createEntity(
-        data=build_topic(
-            payload=CreateTopicPayload(
-                userId=user_id, topic=payload.topic, pointers=payload.pointers
-            )
-        ),
-        collection=Collections.TOPICS,
-    )
+def create_topic(user_id: str, payload: CreateTopicRequest) -> Outbound_Topic:
+    return create_topic_handler(user_id=user_id, payload=payload)
 
 
 @app.post("/users/{user_id}/topics/{topic_id}/delete")
@@ -63,8 +80,13 @@ def delete_topic(topic_id: str):
 
 
 @app.post("/users/{user_id}/topics/{topic_id}/pointers")
-def add_pointer(user_id: str, topic_id: str, payload: dict):
+def add_pointer(user_id: str, topic_id: str, payload: PointerPayload):
     return add_pointer_to_topic(user_id=user_id, topic_id=topic_id, pointer=payload)
+
+
+@app.post("/pointers/{pointer_id}/delete")
+def delete_pointer(pointer_id: str):
+    return deleteEntityById(entity_id=pointer_id, collection=Collections.POINTERS)
 
 
 @app.get("/users/{user_id}/topics")
@@ -73,8 +95,15 @@ def get_topics(user_id: str):
 
 
 @app.get("/users/{user_id}/topics/{topic_id}/stories")
-def get_stories_by_topic(user_id: str, topic_id: str):
-    return get_stories(user_id=user_id, topic_id=topic_id)
+def get_stories_by_topic(user_id: str, topic_id: str) -> Outbound_Stories:
+    stories = get_stories(
+        user_id=user_id,
+        topic_id=topic_id,
+    )
+
+    return Outbound_Stories(
+        stories=[Outbound_Story.model_validate(story.model_dump()) for story in stories]
+    )
 
 
 @app.get("/users/{user_id}/stories")

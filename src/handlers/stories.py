@@ -1,31 +1,36 @@
+from src.database.find import find_many
 from src.database.topics import get_topic_by_id
-from src.models.database.topic import Topic
-from src.models.rss.common import RSS_FEEDS
-from src.rss.read import rss_read
+from src.models.database.common import Collections
+from src.models.database.story import Story
 from src.tools.logging import getLogger
 
 logger = getLogger()
 
 
-def get_stories(user_id: str, topic_id: str):
-    topic_data = get_topic_by_id(topic_id)
-
-    logger.info(f"Retrieved topic data for topic_id {topic_id}, user_id {user_id}")
-
-    topic: Topic = topic_data
-    stories = []
-    pointers = topic.get("pointers", [])
-
+def get_stories(user_id: str, topic_id: str) -> list[Story]:
     try:
-        for pointer in pointers:
-            stories.extend(
-                rss_read(
-                    url=pointer.get("link"),
-                    feed_type=RSS_FEEDS(pointer.get("feed_type")),
-                )
-            )
-    except Exception as e:
-        logger.exception("Error retrieving stories", exc_info=True)
-        raise ValueError(f"Error retrieving stories: {e}")
+        topic = get_topic_by_id(topic_id)
 
-    return stories
+        if topic is None:
+            raise ValueError("Topic not found.")
+
+        if str(topic.userId) != user_id:
+            raise ValueError("Topic does not belong to user.")
+
+        if not topic.pointers:
+            return []
+
+        results = find_many(
+            Collections.STORIES,
+            {
+                "pointer_id": {
+                    "$in": topic.pointers,
+                }
+            },
+        )
+
+        return [Story.model_validate(result) for result in results]
+
+    except Exception as error:
+        logger.exception("Error retrieving stories")
+        raise ValueError(f"Error retrieving stories: {error}") from error
