@@ -21,4 +21,4 @@ class User(BaseModel):
 
 
 class Outbound_User(User):
-    id: ObjectIdString
+    id: ObjectIdString = Field(alias="_id")
