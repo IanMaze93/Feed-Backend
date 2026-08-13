@@ -16,8 +16,6 @@ services:
     image: mongo:latest
     container_name: feed-mongo-db
     restart: unless-stopped
-    ports:
-      - "27017:27017"
     volumes:
       - mongo-data:/data/db
 
