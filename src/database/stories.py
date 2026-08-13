@@ -9,8 +9,13 @@ def get_all_stories_by_user(user_id: str) -> Outbound_Stories:
     stories = []
 
     for topic in response.topics:
-        topic_stories = get_stories(user_id=user_id, topic_id=topic.id)
+        topic_stories = get_stories(
+            user_id=user_id,
+            topic_id=topic.id,
+        )
 
-        stories.extend(Outbound_Story.model_validate(story) for story in topic_stories)
+        stories.extend(
+            Outbound_Story.model_validate(story.model_dump()) for story in topic_stories
+        )
 
     return Outbound_Stories(stories=stories)

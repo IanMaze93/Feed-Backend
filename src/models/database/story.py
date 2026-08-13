@@ -1,7 +1,9 @@
 from datetime import datetime
 
 from bson import ObjectId
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
+
+from src.models.database.common import ObjectIdString
 
 
 class Story(BaseModel):
@@ -10,32 +12,17 @@ class Story(BaseModel):
         arbitrary_types_allowed=True,
     )
 
-    id: ObjectId = Field(default_factory=ObjectId)
+    id: ObjectId = Field(default_factory=ObjectId, alias="_id")
+    pointer_id: ObjectId
     title: str
     link: str
-    feed_type: str
-    created_at: datetime
+    source: str
+    published_at: datetime | None = None
 
 
-class Outbound_Story(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-        from_attributes=True,
-    )
-
-    id: str
-    title: str
-    link: str
-    feed_type: str
-    created_at: datetime
-
-    @field_validator("id", mode="before")
-    @classmethod
-    def object_id_to_string(cls, value):
-        if isinstance(value, ObjectId):
-            return str(value)
-
-        return value
+class Outbound_Story(Story):
+    id: ObjectIdString = Field(alias="_id")
+    pointer_id: ObjectIdString
 
 
 class Outbound_Stories(BaseModel):

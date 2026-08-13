@@ -4,7 +4,9 @@ from bson import ObjectId
 from bson.errors import InvalidId
 
 from src.database.find import find_many, find_one
+from src.database.pointers import find_or_create_pointer
 from src.database.update import update_one
+from src.models.api.topic import PointerPayload
 from src.models.database.common import Collections
 from src.models.database.topic import Outbound_Topic, Outbound_Topics, Topic
 from src.tools.logging import getLogger
@@ -15,8 +17,8 @@ logger = getLogger()
 def add_pointer_to_topic(
     user_id: str,
     topic_id: str,
-    pointer: dict,
-) -> dict:
+    pointer: PointerPayload,
+) -> Outbound_Topic:
     try:
         user_object_id = ObjectId(user_id)
         topic_object_id = ObjectId(topic_id)
@@ -28,28 +30,36 @@ def add_pointer_to_topic(
 
         topic = find_one(Collections.TOPICS, query)
 
-        pointers = topic.get("pointers", []) if topic else []
+        if topic is None:
+            raise ValueError("Topic not found.")
 
-        payload = {
-            "userId": user_object_id,
-            "topic": topic["topic"],
-            "pointers": pointers + [pointer],
-            "updatedAt": datetime.now(),
-        }
+        new_pointer = find_or_create_pointer(
+            url=pointer.url,
+            feed_type=pointer.feed_type,
+        )
 
-        try:
-            update_one(
-                Collections.TOPICS,
-                query,
-                {"$set": payload},
-            )
-        except Exception as error:
-            logger.exception("Error updating topic with new pointer")
-            raise ValueError(
-                f"Error updating topic with new pointer: {error}"
-            ) from error
+        if new_pointer is None:
+            raise ValueError("Pointer not found.")
 
-        return Outbound_Topic.model_validate(find_one(Collections.TOPICS, query))
+        update_one(
+            Collections.TOPICS,
+            query,
+            {
+                "$addToSet": {
+                    "pointers": new_pointer.id,
+                },
+                "$set": {
+                    "updatedAt": datetime.now(),
+                },
+            },
+        )
+
+        updated_topic = find_one(
+            Collections.TOPICS,
+            query,
+        )
+
+        return Outbound_Topic.model_validate(updated_topic)
 
     except InvalidId as error:
         raise ValueError("Invalid user ID or topic ID.") from error
@@ -98,7 +108,7 @@ def get_topic_by_id(topic_id: str) -> Topic:
         if not topic:
             return None
 
-        return topic
+        return Topic.model_validate(topic)
 
     except InvalidId as error:
         raise ValueError("Invalid topic ID.") from error
