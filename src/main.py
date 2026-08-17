@@ -16,6 +16,7 @@ from src.handlers.root import root_handler
 from src.handlers.stories import get_stories
 from src.handlers.topics import create_topic_handler
 from src.handlers.users import get_user_by_id
+from src.models.api.stories import AllStoriesResponse
 from src.models.api.topic import CreateTopicRequest, PointerPayload
 from src.models.api.user import CreateUserPayload
 from src.models.database.common import Collections
@@ -107,5 +108,5 @@ def get_stories_by_topic(user_id: str, topic_id: str) -> Outbound_Stories:
 
 
 @app.get("/users/{user_id}/stories")
-def get_stories_by_user(user_id: str) -> Outbound_Stories:
+def get_stories_by_user(user_id: str) -> AllStoriesResponse:
     return get_all_stories_by_user(user_id)
