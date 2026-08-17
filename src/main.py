@@ -107,5 +107,5 @@ def get_stories_by_topic(user_id: str, topic_id: str) -> Outbound_Stories:
 
 
 @app.get("/users/{user_id}/stories")
-def get_stories_by_user(user_id: str):
+def get_stories_by_user(user_id: str) -> Outbound_Stories:
     return get_all_stories_by_user(user_id)
