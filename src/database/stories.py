@@ -1,9 +1,10 @@
 from src.database.topics import get_all_topics_by_user_id
 from src.handlers.stories import get_stories
-from src.models.database.story import Outbound_Stories, Outbound_Story
+from src.models.api.stories import AllStoriesResponse, TopicResponse
+from src.models.database.story import Outbound_Story
 
 
-def get_all_stories_by_user(user_id: str) -> Outbound_Stories:
+def get_all_stories_by_user(user_id: str) -> AllStoriesResponse:
     response = get_all_topics_by_user_id(user_id)
 
     stories = []
@@ -14,8 +15,14 @@ def get_all_stories_by_user(user_id: str) -> Outbound_Stories:
             topic_id=topic.id,
         )
 
-        stories.extend(
-            Outbound_Story.model_validate(story.model_dump()) for story in topic_stories
+        stories.append(
+            TopicResponse(
+                topic=topic.topic,
+                entries=[
+                    Outbound_Story.model_validate(story.model_dump())
+                    for story in topic_stories
+                ],
+            )
         )
 
-    return Outbound_Stories(stories=stories)
+    return AllStoriesResponse(stories=stories)
