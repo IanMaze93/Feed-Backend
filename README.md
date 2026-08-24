@@ -1,41 +1,108 @@
-# Feed Backend
+# The Feed - Backend
 
-Backend API for **Feed**, a personalized news aggregation platform built with FastAPI and MongoDB.
+<img src="./src/images/logo-feed.png">
 
-Users create topics and attach feed pointers to those topics. Pointers represent external RSS/Atom feeds such as Reddit or Google News. Stories are fetched in the background and stored in MongoDB so API requests do not need to fetch external feeds in real time.
+**Your news. Your topics. No socials.**
+
+The Feed Backend is the API and feed-processing service behind **The Feed**, a personalized news aggregator designed to give users more control over the content they see.
+
+Instead of relying on a traditional social media feed filled with advertisements, promoted content, and algorithmic recommendations, The Feed allows users to define the topics and sources they want to follow.
+
+Users create **topics** and attach **pointers** to external sources such as Reddit or Google News. The backend retrieves stories from those sources, stores them in MongoDB, and makes them available to The Feed frontend through the API.
+
+The backend is built with:
+
+- **FastAPI**
+- **MongoDB**
+- **APScheduler**
+- **Pydantic**
+- **Poetry**
+
+Currently supported feed sources include:
+
+- **Google News**
+- **Reddit**
+
+Additional source types can be added as the project grows.
+
+---
+
+# How It Works
+
+The basic structure of The Feed is:
+
+```text
+User
+  ↓
+Topic
+  ↓
+Pointers
+  ↓
+Stories
+```
+
+A user creates a topic based on something they want to follow.
+
+For example:
+
+```text
+Star Wars
+DC Universe
+Artificial Intelligence
+Python
+```
+
+Each topic contains references to one or more **pointers**.
+
+A pointer represents an external RSS or Atom feed:
+
+```text
+Topic: Star Wars
+
+├── Google News: Star Wars
+├── Reddit: r/StarWars
+└── Reddit: r/StarWarsLeaks
+```
+
+The backend periodically fetches those feeds and stores their latest stories.
+
+When the frontend requests stories for a topic, the API reads the already-stored stories from MongoDB rather than waiting for the external feeds to respond.
+
+```text
+External Feed
+     ↓
+   Pointer
+     ↓
+Background Refresh
+     ↓
+   MongoDB
+     ↓
+  FastAPI
+     ↓
+ Frontend
+```
 
 ---
 
 # Architecture
 
-The core data model consists of three resources:
+The core data model consists of four resources:
 
 ```text
 User
  └── Topic
       └── Pointer IDs
-           ↓
-        Pointer
-           ↓
-        Stories
+             ↓
+          Pointer
+             ↓
+          Stories
 ```
 
 ## Topics
 
-A topic is a user-defined collection of feeds.
+A **topic** is a user-defined collection of feeds.
 
-Examples:
-
-```text
-UAP
-Marvel
-Artificial Intelligence
-Python
-```
-
-Topics belong to individual users.
-
-A topic does **not** directly own its stories. Instead, it stores references to one or more pointers.
+Topics belong to individual users and allow each user to organize their feed however they want.
 
 Example:
 
@@ -43,30 +110,36 @@ Example:
 {
   "_id": "...",
   "userId": "...",
-  "topic": "Marvel",
+  "topic": "Star Wars",
   "pointers": ["...", "..."]
 }
 ```
 
-This allows users to organize feeds however they want without duplicating the underlying feed data.
+Topics do not directly own stories.
+
+Instead, they contain references to pointers, and stories belong to those pointers.
+
+This keeps user organization separate from the underlying feed data.
 
 ---
 
 ## Pointers
 
-A pointer represents a unique external feed.
+A **pointer** represents a unique external feed.
 
 Examples:
 
 ```text
-https://www.reddit.com/r/UFOs.rss
+https://www.reddit.com/r/StarWars.rss
+
 https://www.reddit.com/r/MarvelStudiosSpoilers.rss
+
 Google News RSS feeds
 ```
 
 Pointers are shared resources.
 
-If multiple users or topics subscribe to the same feed, they reference the **same pointer** instead of creating duplicate pointers.
+If multiple users or topics follow the same external feed, they reference the same pointer instead of creating duplicate copies.
 
 ```text
 User A Topic ──┐
@@ -74,9 +147,13 @@ User A Topic ──┐
 User B Topic ──┘
 ```
 
-This means the backend only needs to fetch an external feed once.
+This allows The Feed to follow a simple principle:
 
-Pointers contain scheduling information used by the background refresh system:
+> **Fetch once, reuse many times.**
+
+The backend only needs to request a shared external feed once regardless of how many topics use it.
+
+Pointers also contain information used by the background refresh system:
 
 ```text
 url
@@ -88,7 +165,7 @@ created_at
 updated_at
 ```
 
-Before creating a pointer, the backend normalizes its URL and checks whether that pointer already exists.
+Before a pointer is created, its URL is normalized and checked against existing pointers.
 
 ---
 
@@ -115,7 +192,7 @@ source
 published_at
 ```
 
-`source` identifies where the story originated, such as:
+The `source` identifies where the story originated, such as:
 
 ```text
 reddit
@@ -124,7 +201,7 @@ google
 
 `published_at` may be `null` when the source feed does not provide a publication timestamp.
 
-Stories are stored in MongoDB rather than fetched when a user requests their feed.
+Stories are stored in MongoDB rather than fetched whenever a user opens their feed.
 
 ---
 
@@ -137,12 +214,14 @@ Topic
   ↓
 Pointer IDs
   ↓
-Stories matching those pointer IDs
+Stories matching those pointers
   ↓
 API Response
+  ↓
+Frontend
 ```
 
-Conceptually, the MongoDB query is:
+Conceptually, story retrieval uses the topic's pointer IDs:
 
 ```python
 {
@@ -152,31 +231,33 @@ Conceptually, the MongoDB query is:
 }
 ```
 
-This avoids making external RSS requests during normal API requests.
+Because the stories have already been collected by the background system, normal API requests do not need to make external RSS requests.
+
+This helps keep feed retrieval fast and separates **reading stories** from **fetching stories**.
 
 ---
 
 # Background Refresh System
 
-Feed fetching happens independently from API requests.
+External feed retrieval happens independently from normal API requests.
 
-APScheduler periodically runs the story refresh job.
+**APScheduler** periodically runs the story refresh process.
 
 ```text
 APScheduler
      ↓
 Find pointers ready for refresh
      ↓
-Fetch RSS/Atom feed
+Fetch RSS / Atom feed
      ↓
 Parse stories
      ↓
-Replace stored stories
+Store latest stories
      ↓
 Update pointer schedule
 ```
 
-A pointer is ready for refresh when:
+A pointer is ready to refresh when:
 
 ```text
 next_fetch is None
@@ -195,48 +276,48 @@ last_fetched = now
 next_fetch = now + refresh interval
 ```
 
-A delay is placed between external feed requests to reduce the chance of hitting provider rate limits.
+A delay is placed between external requests to reduce unnecessary traffic and lower the chance of hitting provider rate limits.
 
-Failures for one pointer should not prevent other pointers from refreshing.
+A failure while refreshing one pointer should not prevent the remaining pointers from being processed.
 
 ---
 
 # Pointer Deduplication
 
-Pointers are deduplicated globally by their normalized URL.
-
-Before creating a pointer:
+Pointers are deduplicated globally using their normalized URL.
 
 ```text
 Incoming URL
-    ↓
+     ↓
 Normalize URL
-    ↓
+     ↓
 Search MongoDB
-    ↓
-Exists?
+     ↓
+   Exists?
    /     \
  yes      no
   ↓        ↓
 reuse    create
   │        │
-  └── ID ──┘
+  └── ID ─┘
       ↓
 Add pointer ID to topic
 ```
 
-This is intentionally different from deduplicating topic names.
+This prevents multiple copies of the same external source from being created.
+
+Topic names are intentionally **not** globally deduplicated.
 
 For example:
 
 ```text
-"UAP"
-"UAP News"
-"UFO News"
-"Aliens"
+Star Wars
+Star Wars News
+Star Wars Updates
+Lucasfilm
 ```
 
-may represent similar concepts, but users are free to organize and name their topics however they want.
+may overlap, but users are free to organize their feeds however they want.
 
 The important shared resource is the **pointer**, not the topic name.
 
@@ -244,24 +325,11 @@ The important shared resource is the **pointer**, not the topic name.
 
 # MongoDB Indexes
 
-Indexes are created during FastAPI application startup using the application lifespan handler.
+Indexes are created during FastAPI application startup.
 
-Example:
+Important indexes include:
 
-```python
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    create_indexes(db)
-    scheduler.start()
-
-    yield
-
-    scheduler.shutdown()
-```
-
-Useful indexes include:
-
-### Unique pointer URLs
+### Unique Pointer URLs
 
 ```python
 collection.create_index(
@@ -270,33 +338,33 @@ collection.create_index(
 )
 ```
 
-This prevents duplicate pointers from being stored.
+Prevents duplicate shared pointers.
 
-### Pointer refresh scheduling
+### Pointer Refresh Scheduling
 
 ```python
 collection.create_index("next_fetch")
 ```
 
-This improves queries that find pointers ready to refresh.
+Improves queries that find pointers ready to refresh.
 
-### Stories by pointer
+### Stories by Pointer
 
 ```python
 collection.create_index("pointer_id")
 ```
 
-This improves story retrieval and deletion by pointer.
+Improves story retrieval and deletion by pointer.
 
-### Topics by user
+### Topics by User
 
 ```python
 collection.create_index("userId")
 ```
 
-This improves retrieving all topics belonging to a user.
+Improves retrieval of a user's topics.
 
-Indexes should enforce database-level guarantees where appropriate rather than relying exclusively on application-level checks.
+Where appropriate, database-level indexes enforce guarantees rather than relying only on application logic.
 
 ---
 
@@ -316,9 +384,9 @@ class Story(BaseModel):
     pointer_id: ObjectId
 ```
 
-API responses must convert these values into strings because MongoDB `ObjectId` values cannot be serialized directly to JSON.
+MongoDB `ObjectId` values cannot be returned directly as standard JSON.
 
-Outbound models handle this conversion:
+The API therefore uses outbound models to convert MongoDB-specific values into JSON-friendly representations.
 
 ```python
 class Outbound_Story(Story):
@@ -333,34 +401,18 @@ MongoDB
    ↓
 Database Model
    ↓
-Internal application logic
+Internal Application Logic
    ↓
 Outbound Model
    ↓
 FastAPI
    ↓
 JSON
+   ↓
+Frontend
 ```
 
-Internal database and handler functions can work with models such as:
-
-```text
-User
-Topic
-Pointer
-Story
-```
-
-The API layer converts these into:
-
-```text
-Outbound_User
-Outbound_Topic
-Outbound_Pointer
-Outbound_Story
-```
-
-before returning them to clients.
+This keeps database-specific types inside the backend while exposing clean API responses to clients.
 
 ---
 
@@ -450,22 +502,37 @@ docker compose logs -f feed-api
 
 # Current Feed Sources
 
-The feed parser currently supports:
+The Feed currently supports:
 
-- Reddit RSS/Atom feeds
-- Google News RSS feeds
+- **Reddit RSS / Atom feeds**
+- **Google News RSS feeds**
 
-Each feed source is normalized into the common Story model so clients do not need to understand the differences between individual RSS providers.
+Each source is converted into the same common Story model so the frontend does not need to understand the differences between individual RSS providers.
 
 ---
 
 # Design Goals
 
-The backend is designed around a few core principles:
+The Feed Backend is designed around a few core principles:
 
-- **Fetch once, reuse many times** — shared pointers prevent duplicate external requests.
-- **Keep user organization flexible** — topic names do not need global normalization or deduplication.
-- **Separate fetching from reading** — users read stories from MongoDB rather than waiting for external RSS requests.
+- **Give users control** — users decide which topics and sources belong in their feed.
+- **Fetch once, reuse many times** — shared pointers prevent duplicate requests to external sources.
+- **Keep user organization flexible** — users can name and organize topics however they want.
+- **Separate fetching from reading** — users read stored stories instead of waiting for external RSS requests.
 - **Respect external services** — scheduled refreshes and delays reduce unnecessary requests.
-- **Database-enforced uniqueness** — MongoDB indexes protect against duplicate shared resources.
-- **Separate internal and external models** — MongoDB-specific types remain inside the backend while API responses remain JSON-friendly.
+- **Enforce shared-resource uniqueness** — MongoDB indexes prevent duplicate pointers.
+- **Keep API responses clean** — MongoDB-specific types remain internal while clients receive JSON-friendly models.
+
+---
+
+# Project Goal
+
+The goal of The Feed is simple:
+
+> **Give users a way to stay informed about the things they care about without needing a traditional social media feed.**
+
+The backend makes that possible by collecting, organizing, storing, and serving the sources the user chooses.
+
+**You choose the topics.
+You choose the sources.
+The Feed handles the rest.**
