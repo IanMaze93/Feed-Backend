@@ -1,4 +1,16 @@
 def create_indexes(db):
+    db["Users"].create_index(
+        "username",
+        unique=True,
+        name="unique_username",
+    )
+
+    db["Users"].create_index(
+        "email",
+        unique=True,
+        name="unique_email",
+    )
+
     db["Pointers"].create_index(
         "normalized_url",
         unique=True,
