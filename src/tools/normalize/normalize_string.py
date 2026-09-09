@@ -20,11 +20,16 @@ def normalize_url(url: str) -> str:
 
     parts = urlsplit(url)
 
+    path = parts.path.rstrip("/").lower()
+
+    if path.endswith(".rss"):
+        path = path[:-4]
+
     return urlunsplit(
         (
             parts.scheme.lower(),
             parts.netloc.lower(),
-            parts.path.rstrip("/"),
+            path,
             parts.query,
             "",
         )

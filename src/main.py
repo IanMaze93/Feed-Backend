@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 from src.builders.users import build_user
 from src.cron.scheduler import getScheduler
@@ -10,6 +10,7 @@ from src.database.topics import (
     add_pointer_to_topic,
     get_all_topics_by_user_id,
 )
+from src.handlers.auth import login_handler
 from src.handlers.common import createEntity, deleteEntityById
 from src.handlers.health import health_handler
 from src.handlers.root import root_handler
@@ -18,7 +19,7 @@ from src.handlers.topics import create_topic_handler
 from src.handlers.users import get_user_by_id
 from src.models.api.stories import AllStoriesResponse
 from src.models.api.topic import CreateTopicRequest, PointerPayload
-from src.models.api.user import CreateUserPayload
+from src.models.api.user import LoginPayload, SignupPayload
 from src.models.database.common import Collections
 from src.models.database.story import Outbound_Stories, Outbound_Story
 from src.models.database.topic import Outbound_Topic
@@ -57,8 +58,19 @@ def root():
     return root_handler()
 
 
+@app.post("/auth/login")
+def login(payload: LoginPayload):
+    user_id = login_handler(payload)
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password",
+        )
+    return {"user_id": user_id}
+
+
 @app.post("/users")
-def create_user(payload: CreateUserPayload):
+def create_user(payload: SignupPayload):
     return createEntity(
         data=build_user(payload),
         collection=Collections.USERS,

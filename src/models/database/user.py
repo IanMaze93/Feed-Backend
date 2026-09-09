@@ -16,9 +16,17 @@ class User(BaseModel):
     firstName: str
     lastName: str
     email: str
+    username: str
+    passwordHash: str
     createdAt: datetime
     updatedAt: datetime
 
 
 class Outbound_User(User):
     id: ObjectIdString = Field(alias="_id")
+    username: str
+    firstName: str
+    lastName: str
+    email: str
+    createdAt: datetime
+    updatedAt: datetime
