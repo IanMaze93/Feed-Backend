@@ -76,7 +76,7 @@ def login(payload: LoginPayload) -> TokenResponse:
 
     token = create_access_token(user_id)
 
-    return {"access_token": token, "token_type": "bearer"}
+    return {"access_token": token, "token_type": "bearer", "user_id": user_id}
 
 
 @app.post("/users")
