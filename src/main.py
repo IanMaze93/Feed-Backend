@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, status
 
 from src.builders.users import build_user
 from src.cron.scheduler import getScheduler
@@ -17,6 +17,7 @@ from src.handlers.root import root_handler
 from src.handlers.stories import get_stories
 from src.handlers.topics import create_topic_handler
 from src.handlers.users import get_user_by_id
+from src.models.api.auth import TokenResponse
 from src.models.api.stories import AllStoriesResponse
 from src.models.api.topic import CreateTopicRequest, PointerPayload
 from src.models.api.user import LoginPayload, SignupPayload
@@ -24,6 +25,11 @@ from src.models.database.common import Collections
 from src.models.database.story import Outbound_Stories, Outbound_Story
 from src.models.database.topic import Outbound_Topic
 from src.setup.mongo.index import create_indexes
+from src.tools.auth.token import (
+    create_access_token,
+    get_current_user_id,
+    validate_user_id,
+)
 
 scheduler = getScheduler()
 
@@ -59,14 +65,18 @@ def root():
 
 
 @app.post("/auth/login")
-def login(payload: LoginPayload):
+def login(payload: LoginPayload) -> TokenResponse:
     user_id = login_handler(payload)
+
     if not user_id:
         raise HTTPException(
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
         )
-    return {"user_id": user_id}
+
+    token = create_access_token(user_id)
+
+    return {"access_token": token, "token_type": "bearer"}
 
 
 @app.post("/users")
@@ -78,37 +88,102 @@ def create_user(payload: SignupPayload):
 
 
 @app.get("/users/{user_id}")
-def get_user(user_id: str):
+def get_user(
+    user_id: str,
+    token_user_id: str = Depends(get_current_user_id),
+):
+    if not validate_user_id(user_id, token_user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User ID does not match token",
+        )
     return get_user_by_id(user_id)
 
 
 @app.post("/users/{user_id}/topics")
-def create_topic(user_id: str, payload: CreateTopicRequest) -> Outbound_Topic:
+def create_topic(
+    user_id: str,
+    payload: CreateTopicRequest,
+    token_user_id: str = Depends(get_current_user_id),
+) -> Outbound_Topic:
+    if not validate_user_id(user_id, token_user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User ID does not match token",
+        )
+
     return create_topic_handler(user_id=user_id, payload=payload)
 
 
 @app.post("/users/{user_id}/topics/{topic_id}/delete")
-def delete_topic(topic_id: str):
+def delete_topic(
+    user_id: str,
+    topic_id: str,
+    token_user_id: str = Depends(get_current_user_id),
+):
+    if not validate_user_id(user_id, token_user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User ID does not match token",
+        )
+
     return deleteEntityById(entity_id=topic_id, collection=Collections.TOPICS)
 
 
 @app.post("/users/{user_id}/topics/{topic_id}/pointers")
-def add_pointer(user_id: str, topic_id: str, payload: PointerPayload):
+def add_pointer(
+    user_id: str,
+    topic_id: str,
+    payload: PointerPayload,
+    token_user_id: str = Depends(get_current_user_id),
+):
+    if not validate_user_id(user_id, token_user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User ID does not match token",
+        )
     return add_pointer_to_topic(user_id=user_id, topic_id=topic_id, pointer=payload)
 
 
-@app.post("/pointers/{pointer_id}/delete")
-def delete_pointer(pointer_id: str):
+@app.post("/users/{user_id}/pointers/{pointer_id}/delete")
+def delete_pointer(
+    user_id: str,
+    pointer_id: str,
+    token_user_id: str = Depends(get_current_user_id),
+):
+    if not validate_user_id(user_id, token_user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User ID does not match token",
+        )
     return deleteEntityById(entity_id=pointer_id, collection=Collections.POINTERS)
 
 
 @app.get("/users/{user_id}/topics")
-def get_topics(user_id: str):
+def get_topics(
+    user_id: str,
+    token_user_id: str = Depends(get_current_user_id),
+):
+    if not validate_user_id(user_id, token_user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User ID does not match token",
+        )
     return get_all_topics_by_user_id(user_id)
 
 
 @app.get("/users/{user_id}/topics/{topic_id}/stories")
-def get_stories_by_topic(user_id: str, topic_id: str) -> Outbound_Stories:
+def get_stories_by_topic(
+    user_id: str,
+    topic_id: str,
+    token_user_id: str = Depends(get_current_user_id),
+) -> Outbound_Stories:
+    if not validate_user_id(user_id, token_user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User ID does not match token",
+        )
+
     stories = get_stories(
         user_id=user_id,
         topic_id=topic_id,
@@ -120,5 +195,13 @@ def get_stories_by_topic(user_id: str, topic_id: str) -> Outbound_Stories:
 
 
 @app.get("/users/{user_id}/stories")
-def get_stories_by_user(user_id: str) -> AllStoriesResponse:
+def get_stories_by_user(
+    user_id: str,
+    token_user_id: str = Depends(get_current_user_id),
+) -> AllStoriesResponse:
+    if not validate_user_id(user_id, token_user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User ID does not match token",
+        )
     return get_all_stories_by_user(user_id)
