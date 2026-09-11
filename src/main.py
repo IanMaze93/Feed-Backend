@@ -6,6 +6,7 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from src.builders.users import build_user
 from src.cron.scheduler import getScheduler
 from src.database.mongo_client import connectToDatabase
+from src.database.pointers import get_pointer_by_id
 from src.database.stories import get_all_stories_by_user
 from src.database.topics import (
     add_pointer_to_topic,
@@ -23,6 +24,7 @@ from src.models.api.stories import AllStoriesResponse
 from src.models.api.topic import CreateTopicRequest, PointerPayload, UpdateTopicsRequest
 from src.models.api.user import LoginPayload, SignupPayload
 from src.models.database.common import Collections
+from src.models.database.pointer import Outbound_Pointer
 from src.models.database.story import Outbound_Stories, Outbound_Story
 from src.models.database.topic import Outbound_Topic
 from src.setup.mongo.index import create_indexes
@@ -220,3 +222,26 @@ def get_stories_by_user(
             detail="User ID does not match token",
         )
     return get_all_stories_by_user(user_id)
+
+
+@app.get("/users/{user_id}/pointers/{pointer_id}")
+def get_pointer(
+    user_id: str,
+    pointer_id: str,
+    token_user_id: str = Depends(get_current_user_id),
+) -> Outbound_Pointer:
+    if not validate_user_id(user_id, token_user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User ID does not match token",
+        )
+
+    pointer = get_pointer_by_id(pointer_id)
+
+    if not pointer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Pointer not found",
+        )
+
+    return Outbound_Pointer.model_validate(pointer.model_dump())

@@ -7,9 +7,9 @@ from src.tools.logging import getLogger
 logger = getLogger()
 
 
-def createEntity(data: dict, collection: Collections):
+def createEntity(data: dict, collection: Collections, session=None):
     try:
-        entity_id = createDocument(collection, data)
+        entity_id = createDocument(collection, data, session=session)
         return entity_id
 
     except Exception as e:

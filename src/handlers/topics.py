@@ -1,3 +1,7 @@
+from datetime import datetime
+
+from gridfs.grid_file import ObjectId
+
 from src.builders.topics import build_topic
 from src.database.delete import delete_one
 from src.database.mongo_client import getClient
@@ -25,7 +29,7 @@ def update_topics_handler(
 
     with client.start_session() as session:
         with session.start_transaction():
-            existing_topics = get_all_topics_by_user_id(user_id)
+            existing_topics = get_all_topics_by_user_id(user_id, session=session).topics
 
             for incoming_topic in payload.topics:
                 existing_topic = next(
@@ -54,8 +58,14 @@ def update_topics_handler(
 
                     update_one(
                         Collections.TOPICS,
-                        str(existing_topic.id),
-                        existing_topic,
+                        {"_id": ObjectId(str(existing_topic.id))},
+                        {
+                            "$set": {
+                                "topic": incoming_topic.topic,
+                                "pointers": pointer_ids,
+                                "updatedAt": datetime.now(),
+                            }
+                        },
                         session=session,
                     )
 
@@ -77,11 +87,11 @@ def update_topics_handler(
                 if str(existing_topic.id) not in incoming_ids:
                     delete_one(
                         Collections.TOPICS,
-                        str(existing_topic.id),
+                        {"_id": ObjectId(str(existing_topic.id))},
                         session=session,
                     )
 
-    return get_all_topics_by_user_id(user_id)
+    return get_all_topics_by_user_id(user_id).topics
 
 
 def create_topic_handler(
@@ -112,7 +122,7 @@ def create_topic_handler(
             session=session,
         )
 
-        topic = get_topic_by_id(str(created_topic_id))
+        topic = get_topic_by_id(str(created_topic_id), session=session)
 
         return Outbound_Topic.model_validate(topic.model_dump())
 
