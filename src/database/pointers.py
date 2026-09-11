@@ -59,7 +59,7 @@ def get_pointer_by_url(normalized_url: str) -> Pointer | None:
         raise ValueError(f"Error retrieving pointer by URL: {error}") from error
 
 
-def find_or_create_pointer(url: str, feed_type: str) -> Pointer:
+def find_or_create_pointer(url: str, feed_type: str, session=None) -> Pointer:
     """
     Find a pointer by its normalized URL. If it doesn't exist, create a new pointer.
     """
@@ -81,6 +81,7 @@ def find_or_create_pointer(url: str, feed_type: str) -> Pointer:
         created_pointer_id = createEntity(
             data=new_pointer,
             collection=Collections.POINTERS,
+            session=session,
         )
 
         return get_pointer_by_id(str(created_pointer_id))

@@ -15,8 +15,8 @@ def test_update_one_calls_collection():
     query = {"_id": "123"}
     update = {"$set": {"name": "test"}}
     with patch("src.database.update.getCollection", return_value=mock_collection):
-        update_one(Collections.TOPICS, query, update)
-    mock_collection.update_one.assert_called_once_with(query, update)
+        update_one(Collections.TOPICS, query, update, session=None)
+    mock_collection.update_one.assert_called_once_with(query, update, session=None)
 
 
 def test_update_one_returns_result():
@@ -24,7 +24,7 @@ def test_update_one_returns_result():
     mock_result = MagicMock()
     mock_collection.update_one.return_value = mock_result
     with patch("src.database.update.getCollection", return_value=mock_collection):
-        result = update_one(Collections.TOPICS, {}, {})
+        result = update_one(Collections.TOPICS, {}, {}, session=None)
     assert result is mock_result
 
 
@@ -33,8 +33,8 @@ def test_update_many_calls_collection():
     query = {"status": "inactive"}
     update = {"$set": {"status": "active"}}
     with patch("src.database.update.getCollection", return_value=mock_collection):
-        update_many(Collections.TOPICS, query, update)
-    mock_collection.update_many.assert_called_once_with(query, update)
+        update_many(Collections.TOPICS, query, update, session=None)
+    mock_collection.update_many.assert_called_once_with(query, update, session=None)
 
 
 def test_update_many_returns_result():
@@ -42,7 +42,7 @@ def test_update_many_returns_result():
     mock_result = MagicMock()
     mock_collection.update_many.return_value = mock_result
     with patch("src.database.update.getCollection", return_value=mock_collection):
-        result = update_many(Collections.TOPICS, {}, {})
+        result = update_many(Collections.TOPICS, {}, {}, session=None)
     assert result is mock_result
 
 
@@ -51,8 +51,10 @@ def test_upsert_one_passes_upsert_flag():
     query = {"_id": "abc"}
     update = {"$set": {"x": 1}}
     with patch("src.database.update.getCollection", return_value=mock_collection):
-        upsert_one(Collections.TOPICS, query, update)
-    mock_collection.update_one.assert_called_once_with(query, update, upsert=True)
+        upsert_one(Collections.TOPICS, query, update, session=None)
+    mock_collection.update_one.assert_called_once_with(
+        query, update, upsert=True, session=None
+    )
 
 
 def test_upsert_many_passes_upsert_flag():
@@ -60,8 +62,10 @@ def test_upsert_many_passes_upsert_flag():
     query = {"type": "bot"}
     update = {"$set": {"active": True}}
     with patch("src.database.update.getCollection", return_value=mock_collection):
-        upsert_many(Collections.TOPICS, query, update)
-    mock_collection.update_many.assert_called_once_with(query, update, upsert=True)
+        upsert_many(Collections.TOPICS, query, update, session=None)
+    mock_collection.update_many.assert_called_once_with(
+        query, update, upsert=True, session=None
+    )
 
 
 def test_push_to_array_builds_push_update():
@@ -73,8 +77,10 @@ def test_push_to_array_builds_push_update():
             query,
             "messages",
             {"role": "user", "content": "hi"},
+            session=None,
         )
     mock_collection.update_one.assert_called_once_with(
         query,
         {"$push": {"messages": {"role": "user", "content": "hi"}}},
+        session=None,
     )
