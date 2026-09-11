@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from typing import List
 
 from fastapi import Depends, FastAPI, HTTPException, status
 
@@ -15,11 +16,11 @@ from src.handlers.common import createEntity, deleteEntityById
 from src.handlers.health import health_handler
 from src.handlers.root import root_handler
 from src.handlers.stories import get_stories
-from src.handlers.topics import create_topic_handler
+from src.handlers.topics import create_topic_handler, update_topics_handler
 from src.handlers.users import get_user_by_id
 from src.models.api.auth import TokenResponse
 from src.models.api.stories import AllStoriesResponse
-from src.models.api.topic import CreateTopicRequest, PointerPayload
+from src.models.api.topic import CreateTopicRequest, PointerPayload, UpdateTopicsRequest
 from src.models.api.user import LoginPayload, SignupPayload
 from src.models.database.common import Collections
 from src.models.database.story import Outbound_Stories, Outbound_Story
@@ -113,6 +114,20 @@ def create_topic(
         )
 
     return create_topic_handler(user_id=user_id, payload=payload)
+
+
+@app.put("/users/{user_id}/topics")
+def update_topics(
+    user_id: str,
+    payload: UpdateTopicsRequest,
+    token_user_id: str = Depends(get_current_user_id),
+) -> List[Outbound_Topic]:
+    if not validate_user_id(user_id, token_user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User ID does not match token",
+        )
+    return update_topics_handler(user_id=user_id, payload=payload)
 
 
 @app.post("/users/{user_id}/topics/{topic_id}/delete")

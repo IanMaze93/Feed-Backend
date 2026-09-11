@@ -12,12 +12,13 @@ T = TypeVar("T", bound=BaseModel)
 logger = getLogger()
 
 
-def createDocument(collectionName: Collections, data: T) -> ObjectId:
+def createDocument(collectionName: Collections, data: T, session=None) -> ObjectId:
     collection = getCollection(collectionName)
 
     try:
         response = collection.insert_one(
-            data.model_dump(by_alias=True, exclude_none=True)
+            data.model_dump(by_alias=True, exclude_none=True),
+            session=session,
         )
 
         logger.info(
@@ -28,6 +29,9 @@ def createDocument(collectionName: Collections, data: T) -> ObjectId:
 
         return str(response.inserted_id)
     except Exception as error:
-        logger.exception("Error creating record", {collectionName, id, error})
+        logger.exception(
+            "Error creating record",
+            {"collectionName": collectionName, "data": data, "error": error},
+        )
 
         raise ValueError("Error creating record") from error

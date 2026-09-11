@@ -20,3 +20,7 @@ class CreateTopicPayload(BaseModel):
     userId: str
     topic: str
     pointers: list[ObjectId] = Field(default_factory=list)
+
+
+class UpdateTopicsRequest(CreateTopicPayload):
+    pass
