@@ -81,7 +81,7 @@ def update_topics_handler(
                         session=session,
                     )
 
-            return get_all_topics_by_user_id(user_id)
+    return get_all_topics_by_user_id(user_id)
 
 
 def create_topic_handler(
