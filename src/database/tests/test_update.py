@@ -16,7 +16,7 @@ def test_update_one_calls_collection():
     update = {"$set": {"name": "test"}}
     with patch("src.database.update.getCollection", return_value=mock_collection):
         update_one(Collections.TOPICS, query, update, session=None)
-    mock_collection.update_one.assert_called_once_with(query, update)
+    mock_collection.update_one.assert_called_once_with(query, update, session=None)
 
 
 def test_update_one_returns_result():
@@ -34,7 +34,7 @@ def test_update_many_calls_collection():
     update = {"$set": {"status": "active"}}
     with patch("src.database.update.getCollection", return_value=mock_collection):
         update_many(Collections.TOPICS, query, update, session=None)
-    mock_collection.update_many.assert_called_once_with(query, update)
+    mock_collection.update_many.assert_called_once_with(query, update, session=None)
 
 
 def test_update_many_returns_result():
@@ -52,7 +52,9 @@ def test_upsert_one_passes_upsert_flag():
     update = {"$set": {"x": 1}}
     with patch("src.database.update.getCollection", return_value=mock_collection):
         upsert_one(Collections.TOPICS, query, update, session=None)
-    mock_collection.update_one.assert_called_once_with(query, update, upsert=True)
+    mock_collection.update_one.assert_called_once_with(
+        query, update, upsert=True, session=None
+    )
 
 
 def test_upsert_many_passes_upsert_flag():
@@ -61,7 +63,9 @@ def test_upsert_many_passes_upsert_flag():
     update = {"$set": {"active": True}}
     with patch("src.database.update.getCollection", return_value=mock_collection):
         upsert_many(Collections.TOPICS, query, update, session=None)
-    mock_collection.update_many.assert_called_once_with(query, update, upsert=True)
+    mock_collection.update_many.assert_called_once_with(
+        query, update, upsert=True, session=None
+    )
 
 
 def test_push_to_array_builds_push_update():
@@ -78,4 +82,5 @@ def test_push_to_array_builds_push_update():
     mock_collection.update_one.assert_called_once_with(
         query,
         {"$push": {"messages": {"role": "user", "content": "hi"}}},
+        session=None,
     )
