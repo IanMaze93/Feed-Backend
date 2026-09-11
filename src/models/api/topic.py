@@ -22,5 +22,11 @@ class CreateTopicPayload(BaseModel):
     pointers: list[ObjectId] = Field(default_factory=list)
 
 
-class UpdateTopicsRequest(CreateTopicPayload):
-    pass
+class UpdateTopicPayload(BaseModel):
+    id: str | None = None
+    topic: str
+    pointers: list[PointerPayload] = Field(default_factory=list)
+
+
+class UpdateTopicsRequest(BaseModel):
+    topics: list[UpdateTopicPayload] = Field(default_factory=list)
