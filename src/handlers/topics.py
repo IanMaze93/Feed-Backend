@@ -44,6 +44,7 @@ def update_topics_handler(
                         db_pointer = find_or_create_pointer(
                             url=pointer.url,
                             feed_type=pointer.feed_type,
+                            session=session,
                         )
 
                         pointer_ids.append(db_pointer.id)
@@ -55,6 +56,7 @@ def update_topics_handler(
                         Collections.TOPICS,
                         str(existing_topic.id),
                         existing_topic,
+                        session=session,
                     )
 
                 else:
@@ -64,6 +66,7 @@ def update_topics_handler(
                             topic=incoming_topic.topic,
                             pointers=incoming_topic.pointers,
                         ),
+                        session=session,
                     )
 
             incoming_ids = {
@@ -75,6 +78,7 @@ def update_topics_handler(
                     delete_one(
                         Collections.TOPICS,
                         str(existing_topic.id),
+                        session=session,
                     )
 
             return get_all_topics_by_user_id(user_id)
@@ -83,6 +87,7 @@ def update_topics_handler(
 def create_topic_handler(
     user_id: str,
     payload: CreateTopicRequest,
+    session=None,
 ) -> Outbound_Topic:
     try:
         pointer_ids = []
@@ -104,6 +109,7 @@ def create_topic_handler(
                 )
             ),
             collection=Collections.TOPICS,
+            session=session,
         )
 
         topic = get_topic_by_id(str(created_topic_id))
