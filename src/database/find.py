@@ -9,10 +9,10 @@ def find_one(
 ):
     collection = getCollection(collection_name)
 
-    return collection.find_one(
-        query,
-        session=session,
-    )
+    if session is None:
+        return collection.find_one(query)
+
+    return collection.find_one(query, session=session)
 
 
 def find_many(
@@ -22,7 +22,7 @@ def find_many(
 ):
     collection = getCollection(collection_name)
 
-    return collection.find(
-        query,
-        session=session,
-    )
+    if session is None:
+        return collection.find(query)
+
+    return collection.find(query, session=session)
