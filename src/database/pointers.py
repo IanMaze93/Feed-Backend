@@ -14,7 +14,7 @@ from src.tools.normalize.normalize_string import normalize_url
 logger = getLogger()
 
 
-def get_pointer_by_id(pointer_id: str) -> Pointer | None:
+def get_pointer_by_id(pointer_id: str, session=None) -> Pointer | None:
     """
     Get a pointer by its ID.
     """
@@ -24,6 +24,7 @@ def get_pointer_by_id(pointer_id: str) -> Pointer | None:
         result = find_one(
             Collections.POINTERS,
             {"_id": pointer_object_id},
+            session=session,
         )
 
         if result is None:
@@ -39,7 +40,7 @@ def get_pointer_by_id(pointer_id: str) -> Pointer | None:
         raise ValueError(f"Error retrieving pointer: {error}") from error
 
 
-def get_pointer_by_url(normalized_url: str) -> Pointer | None:
+def get_pointer_by_url(normalized_url: str, session=None) -> Pointer | None:
     """
     Get a pointer by its normalized URL.
     """
@@ -47,6 +48,7 @@ def get_pointer_by_url(normalized_url: str) -> Pointer | None:
         result = find_one(
             Collections.POINTERS,
             {"normalized_url": normalized_url},
+            session=session,
         )
 
         if result is None:
@@ -65,7 +67,7 @@ def find_or_create_pointer(url: str, feed_type: str, session=None) -> Pointer:
     """
     try:
         normalized_url = normalize_url(url)
-        pointer = get_pointer_by_url(normalized_url)
+        pointer = get_pointer_by_url(normalized_url, session=session)
 
         if pointer is not None:
             return pointer
@@ -84,7 +86,7 @@ def find_or_create_pointer(url: str, feed_type: str, session=None) -> Pointer:
             session=session,
         )
 
-        return get_pointer_by_id(str(created_pointer_id))
+        return get_pointer_by_id(str(created_pointer_id), session=session)
 
     except Exception as error:
         logger.exception("Error finding or creating pointer")
