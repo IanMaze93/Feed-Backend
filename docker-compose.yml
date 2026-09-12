@@ -11,6 +11,11 @@ services:
       - .env
     environment:
       MONGO_URI: ${MONGO_URI}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   mongo:
     image: mongo:latest
@@ -21,6 +26,11 @@ services:
       - "127.0.0.1:27018:27017"
     volumes:
       - mongo-data:/data/db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   mongo-data:
