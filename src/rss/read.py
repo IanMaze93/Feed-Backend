@@ -86,6 +86,32 @@ def rss_read(
                 for story in stories
             ]
 
+        case RSS_FEEDS.WEBSITE:
+            parsed_stories = [
+                build_stories(
+                    StoryBuilderPayload(
+                        title=story.get("title"),
+                        link=story.get("link"),
+                        pointer_id=pointer_id,
+                        feed_type=feed_type.value,
+                        published=(
+                            datetime(
+                                *story.get("published_parsed")[:6],
+                                tzinfo=timezone.utc,
+                            )
+                            if story.get("published_parsed")
+                            else datetime(
+                                *story.get("updated_parsed")[:6],
+                                tzinfo=timezone.utc,
+                            )
+                            if story.get("updated_parsed")
+                            else None
+                        ),
+                    )
+                )
+                for story in stories
+            ]
+
         case _:
             raise ValueError(f"Unsupported feed type: {feed_type}")
 
