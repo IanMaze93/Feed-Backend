@@ -37,6 +37,7 @@ Currently supported feed sources include:
 
 - **Google News**
 - **Reddit**
+- **Standard RSS feeds**
 
 Additional source types can be added as the project grows.
 
@@ -99,7 +100,8 @@ Topic: Star Wars
 
 ├── Google News: Star Wars
 ├── Reddit: r/StarWars
-└── Reddit: r/StarWarsLeaks
+├── Reddit: r/StarWarsLeaks
+└── RSS: StarWars.com
 ```
 
 The backend periodically fetches those feeds and stores their latest stories.
@@ -267,8 +269,6 @@ Examples:
 https://www.reddit.com/r/StarWars.rss
 
 https://www.reddit.com/r/MarvelStudiosSpoilers.rss
-
-Google News RSS feeds
 ```
 
 Pointers are shared resources.
